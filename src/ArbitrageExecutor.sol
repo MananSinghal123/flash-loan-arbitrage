@@ -1,88 +1,56 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@aave/core-v3/contracts/flashloan/base/FlashLoanSimpleReceiverBase.sol";
-import "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol";
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ITradeExecutor.sol";
 import "../interfaces/IArbitrageExecutor.sol";
 import "./Whitelisted.sol";
 import "./Arbitrage.sol";
 import {IERC20} from "@aave/core-v3/contracts/dependencies/openzeppelin/contracts/IERC20.sol";
 
-contract ArbitrageExecutor is
-    FlashLoanSimpleReceiverBase,
-    Whitelisted,
-    IArbitrageExecutor
-{
-    address payable owner;
+contract ArbitrageExecutor is IArbitrageExecutor {
+    address payable public owner;
     ITradeExecutor private immutable tradeExecutor;
 
-    constructor(
-        address _addressProvider,
-        address executorAddress
-    ) FlashLoanSimpleReceiverBase(IPoolAddressesProvider(_addressProvider)) {
+    constructor(address executorAddress) {
+        owner = payable(msg.sender);
         tradeExecutor = ITradeExecutor(executorAddress);
     }
 
     function execute(Arbitrage.Opportunity memory arbitrage) external {
-        address receiverAddress = address(this);
-        uint16 referralCode = 0;
-
-        bytes memory params = abi.encode(
-            arbitrage.firstTransaction,
-            arbitrage.secondTransaction
+        // Transfer tokens from owner to contract
+        IERC20(arbitrage.firstTransaction.tokenFrom).transferFrom(
+            owner,
+            address(this),
+            arbitrage.firstTransaction.amount
         );
 
-        POOL.flashLoanSimple(
-            receiverAddress,
-            arbitrage.firstTransaction.tokenFrom,
-            arbitrage.firstTransaction.amount,
-            params,
-            referralCode
-        );
-    }
-
-    function executeOperation(
-        address asset,
-        uint256 amount,
-        uint256 premium,
-        address /*initiator*/,
-        bytes calldata params
-    ) external override returns (bool) {
-        (
-            Arbitrage.Transaction memory firstTransaction,
-            Arbitrage.Transaction memory secondTransation
-        ) = abi.decode(params, (Arbitrage.Transaction, Arbitrage.Transaction));
-
-        IERC20(firstTransaction.tokenFrom).approve(
+        // Approve trade executor to spend tokens
+        IERC20(arbitrage.firstTransaction.tokenFrom).approve(
             address(tradeExecutor),
-            firstTransaction.amount
+            arbitrage.firstTransaction.amount
         );
 
+        // Execute first trade
         uint256 amountPurchased = tradeExecutor.executeTrade(
-            firstTransaction.exchange,
-            firstTransaction.tokenFrom,
-            firstTransaction.tokenTo,
-            firstTransaction.amount
+            arbitrage.firstTransaction.exchange,
+            arbitrage.firstTransaction.tokenFrom,
+            arbitrage.firstTransaction.tokenTo,
+            arbitrage.firstTransaction.amount
         );
 
-        IERC20(secondTransation.tokenFrom).approve(
+        // Approve trade executor to spend tokens from the first swap
+        IERC20(arbitrage.secondTransaction.tokenFrom).approve(
             address(tradeExecutor),
             amountPurchased
         );
 
+        // Execute second trade
         tradeExecutor.executeTrade(
-            secondTransation.exchange,
-            secondTransation.tokenFrom,
-            secondTransation.tokenTo,
+            arbitrage.secondTransaction.exchange,
+            arbitrage.secondTransaction.tokenFrom,
+            arbitrage.secondTransaction.tokenTo,
             amountPurchased
         );
-
-        uint256 totalAmount = amount + premium;
-        IERC20(asset).approve(address(POOL), totalAmount);
-
-        return true;
     }
 
     receive() external payable {}

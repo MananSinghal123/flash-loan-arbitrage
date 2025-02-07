@@ -8,7 +8,7 @@ import "./Arbitrage.sol";
 import "./Whitelisted.sol";
 import "../interfaces/IVeloRouter.sol";
 
-contract ArbitrageFinder is IArbitrageFinder, Whitelisted {
+contract ArbitrageFinder is IArbitrageFinder {
     uint PRICE_TOLERANCE_PERCENT = 2;
 
     IQuoter private immutable uniswapQuoter;
@@ -33,12 +33,7 @@ contract ArbitrageFinder is IArbitrageFinder, Whitelisted {
     function find(
         address token1,
         address token2
-    )
-        external
-        override
-        onlyWhitelisted
-        returns (bool, Arbitrage.Opportunity memory)
-    {
+    ) external returns (bool, Arbitrage.Opportunity memory) {
         uint256 uniswapPrice = getUniswapPrice(token1, token2);
         uint256 voleswapPrice = getVeloSwapPrice(token1, token2);
 

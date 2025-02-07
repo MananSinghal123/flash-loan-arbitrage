@@ -36,7 +36,7 @@ contract Deploy is Script {
 
         // Deploy ArbitrageExecutor
         arbitrageExecutor = new ArbitrageExecutor(
-            AAVE_POOL_ADDRESS_PROVIDER,
+            // AAVE_POOL_ADDRESS_PROVIDER,
             address(tradeExecutor)
         );
         console.log(
@@ -60,9 +60,9 @@ contract Deploy is Script {
         console.log("ArbitrageBot deployed to:", address(arbitrageBot));
 
         // Whitelist dependencies
-        arbitrageExecutor.addToWhitelist(address(arbitrageBot));
-        arbitrageFinder.addToWhitelist(address(arbitrageBot));
-        tradeExecutor.addToWhitelist(address(arbitrageExecutor));
+        // arbitrageExecutor.addToWhitelist(address(arbitrageBot));
+        // arbitrageFinder.addToWhitelist(address(arbitrageBot));
+        // tradeExecutor.addToWhitelist(address(arbitrageExecutor));
 
         vm.stopBroadcast();
     }

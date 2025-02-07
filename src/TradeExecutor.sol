@@ -8,7 +8,7 @@ import "../interfaces/ITradeExecutor.sol";
 import "../interfaces/IVeloRouter.sol";
 import "./Whitelisted.sol";
 
-contract TradeExecutor is ITradeExecutor, Whitelisted {
+contract TradeExecutor is ITradeExecutor {
     ISwapRouter private immutable uniswapRouter;
     address private immutable uniswapRouterAddr;
 
@@ -27,7 +27,7 @@ contract TradeExecutor is ITradeExecutor, Whitelisted {
         address tokenFrom,
         address tokenTo,
         uint256 amount
-    ) external payable override onlyWhitelisted returns (uint256) {
+    ) external payable returns (uint256) {
         require(
             uniswapRouterAddr == dex || veloRouterAddr == dex,
             "Invalid dex"

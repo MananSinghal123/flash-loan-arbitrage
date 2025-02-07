@@ -6,7 +6,7 @@ import "../interfaces/IArbitrageExecutor.sol";
 import "./Whitelisted.sol";
 import "./Arbitrage.sol";
 
-contract ArbitrageBot is Whitelisted {
+contract ArbitrageBot {
     IArbitrageFinder private immutable arbitrageFinder;
     IArbitrageExecutor private immutable arbitrageExecutor;
 
@@ -17,7 +17,7 @@ contract ArbitrageBot is Whitelisted {
         arbitrageExecutor = IArbitrageExecutor(_arbitrageExecutor);
     }
 
-    function execute(address token1, address token2) external onlyWhitelisted {
+    function execute(address token1, address token2) external {
         (bool isFound, Arbitrage.Opportunity memory arbitrage) = arbitrageFinder
             .find(token1, token2);
 
